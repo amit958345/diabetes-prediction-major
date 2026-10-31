@@ -1,0 +1,14 @@
+.venv/
+.venv-1/
+.venv-2/
+
+__pycache__/
+*.pyc
+
+.ipynb_checkpoints/
+
+.vscode/
+
+.pytest_cache/
+
+.streamlit/secrets.toml
