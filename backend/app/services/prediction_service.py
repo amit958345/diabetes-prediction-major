@@ -25,11 +25,10 @@ FEATURE_PATH = PROJECT_ROOT / "models" / "feature_names.pkl"
 model = joblib.load(MODEL_PATH)
 feature_names = joblib.load(FEATURE_PATH)
 
+# Prepare patient data for model prediction and SHAP explanation.
+def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
 
-# Generate a diabetes prediction from validated patient data
-def predict_diabetes(patient_data: PredictionInput) -> dict:
-
-    # Map API field names to the original ML feature names
+    # Map API field names to the original ML feature names.
     feature_values = {
         "Pregnancies": patient_data.pregnancies,
         "Glucose": patient_data.glucose,
@@ -41,25 +40,41 @@ def predict_diabetes(patient_data: PredictionInput) -> dict:
         "Age": patient_data.age
     }
 
-    # Arrange the input values in the model's expected column order
+    # Arrange values in the exact feature order expected by the model.
     input_data = pd.DataFrame(
         [[feature_values[name] for name in feature_names]],
         columns=feature_names
     )
 
-    # Generate the predicted class
+    # Apply preprocessing without running the Logistic Regression model.
+    transformed_data = model[:-1].transform(input_data)
+
+    # Return the transformed data with the original feature names.
+    return pd.DataFrame(
+        transformed_data,
+        columns=feature_names
+    )
+
+
+# Generate a diabetes prediction from validated patient data.
+def predict_diabetes(patient_data: PredictionInput) -> dict:
+
+    # Prepare the patient data using the shared preprocessing helper.
+    input_data = prepare_patient_data(patient_data)
+
+    # Generate the predicted class using the complete ML pipeline.
     predicted_class = int(model.predict(input_data)[0])
 
-    # Generate probabilities for each class
+    # Generate probabilities for each class.
     probabilities = model.predict_proba(input_data)[0]
 
-    # Associate each probability with its corresponding class
+    # Associate each probability with its corresponding class.
     class_probabilities = {
         int(class_label): float(probability)
         for class_label, probability in zip(model.classes_, probabilities)
     }
 
-    # Return the prediction results
+    # Return the prediction results.
     return {
         "predicted_class": predicted_class,
         "probability_class_0": class_probabilities[0],

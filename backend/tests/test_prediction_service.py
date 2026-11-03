@@ -1,3 +1,6 @@
+# Import NumPy for checking numerical values and detecting
+# invalid values such as NaN and infinity.
+import numpy as np
 
 # Import pytest so this file can be executed using the Pytest framework.
 import pytest
@@ -5,8 +8,18 @@ import pytest
 # Import the Pydantic schema used to validate patient input.
 from backend.app.schemas.prediction import PredictionInput
 
-# Import the function that generates predictions using our trained ML model.
-from backend.app.services.prediction_service import predict_diabetes
+# Import prediction functions and the trained ML pipeline.
+from backend.app.services.prediction_service import (
+    predict_diabetes,          # Generates the final diabetes prediction.
+    prepare_patient_data,      # Applies the model's preprocessing steps.
+    model                      # Provides access to the trained ML pipeline.
+)
+
+# Import the function that generates individual SHAP explanations.
+from backend.app.services.shap_service import explain_prediction
+
+# Import the function that calculates global SHAP feature importance.
+from backend.app.services.shap_service import explain_global_features
 
 
 # Store sample patient data containing all eight required input features.
@@ -61,3 +74,153 @@ def test_predict_diabetes_returns_valid_result():
         assert result["predicted_class_probability"] == pytest.approx(
             result["probability_class_1"]
         )
+
+
+# ============================================================
+# SHAP EXPLANATION CONSISTENCY TEST
+# ============================================================
+
+# Verify that SHAP contributions reconstruct the actual
+# Logistic Regression model output.
+def test_shap_explanation_matches_model_output():
+
+    # Validate the sample patient data using the Pydantic schema.
+    patient = PredictionInput.model_validate(sample_data)
+
+    # Apply the exact preprocessing steps used by the trained model.
+    transformed_input = prepare_patient_data(patient)
+
+    # Access the Logistic Regression classifier from the pipeline.
+    classifier = model.named_steps["model"]
+
+    # Calculate the actual model output in log-odds.
+    # This calculation is independent of the SHAP explanation.
+    actual_model_output = float(
+        classifier.decision_function(transformed_input)[0]
+    )
+
+    # Generate the SHAP explanation for the same patient.
+    explanation = explain_prediction(patient)
+
+    # Reconstruct the model output using the SHAP baseline
+    # and the sum of all individual feature contributions.
+    reconstructed_output = (
+        explanation["base_value"]
+        + sum(explanation["feature_contributions"].values())
+    )
+
+    # Verify that the SHAP-reconstructed output matches
+    # the actual Logistic Regression output.
+    assert reconstructed_output == pytest.approx(
+        actual_model_output,
+        abs=0.000001
+    )
+
+    # Verify that the model output returned by the SHAP service
+    # also matches the independently calculated model output.
+    assert explanation["model_output"] == pytest.approx(
+        actual_model_output,
+        abs=0.000001
+    )
+
+
+# ============================================================
+# SHAP FEATURE CONTRIBUTION VALIDATION TEST
+# ============================================================
+
+# Verify that the SHAP explanation contains valid contributions
+# for all eight input features.
+def test_shap_explanation_contains_valid_feature_contributions():
+
+    # Validate the sample patient data.
+    patient = PredictionInput.model_validate(sample_data)
+
+    # Generate the individual SHAP explanation.
+    explanation = explain_prediction(patient)
+
+    # Define the exact feature names expected by the ML model.
+    expected_features = [
+        "Pregnancies",
+        "Glucose",
+        "BloodPressure",
+        "SkinThickness",
+        "Insulin",
+        "BMI",
+        "DiabetesPedigreeFunction",
+        "Age"
+    ]
+
+    # Extract the feature contributions from the explanation.
+    contributions = explanation["feature_contributions"]
+
+    # Verify that all eight expected features are present.
+    assert set(contributions.keys()) == set(expected_features)
+
+    # Verify that exactly eight feature contributions exist.
+    assert len(contributions) == 8
+
+    # Verify that every feature contribution is a finite number.
+    assert all(
+        np.isfinite(value)
+        for value in contributions.values()
+    )
+
+    # Verify that the baseline value is finite.
+    assert np.isfinite(explanation["base_value"])
+
+    # Verify that the reconstructed model output is finite.
+    assert np.isfinite(explanation["model_output"])
+
+
+# ============================================================
+# GLOBAL SHAP FEATURE IMPORTANCE VALIDATION TEST
+# ============================================================
+
+# Verify that global SHAP importance contains valid,
+# non-negative and correctly sorted feature values.
+def test_global_shap_importance_contains_valid_results():
+
+    # Generate global SHAP feature importance.
+    global_explanation = explain_global_features()
+
+    # Define the eight expected ML input features.
+    expected_features = {
+        "Pregnancies",
+        "Glucose",
+        "BloodPressure",
+        "SkinThickness",
+        "Insulin",
+        "BMI",
+        "DiabetesPedigreeFunction",
+        "Age"
+    }
+
+    # Extract the feature importance dictionary.
+    importance = global_explanation["feature_importance"]
+
+    # Verify that all 768 dataset records were analysed.
+    assert global_explanation["total_records_analysed"] == 768
+
+    # Verify that all eight expected features are present.
+    assert set(importance.keys()) == expected_features
+
+    # Verify that all importance values are finite numbers.
+    assert all(
+        np.isfinite(value)
+        for value in importance.values()
+    )
+
+    # Verify that no feature has negative importance.
+    assert all(
+        value >= 0
+        for value in importance.values()
+    )
+
+    # Extract importance values in their returned order.
+    importance_values = list(importance.values())
+
+    # Verify that importance is sorted from highest to lowest.
+    assert importance_values == sorted(
+        importance_values,
+        reverse=True
+    )

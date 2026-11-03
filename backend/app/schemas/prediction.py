@@ -46,9 +46,25 @@ class PredictionInput(BaseModel):
     # Age must be greater than zero.
     age: int = Field(gt=0)
 
+# ============================================================
+# 2. SHAP EXPLANATION RESPONSE SCHEMA
+# ============================================================
+
+class PredictionExplanationResponse(BaseModel):
+
+    # Baseline model output calculated by SHAP.
+    base_value: float
+
+    # Model decision score after adding all SHAP contributions.
+    model_output: float
+
+    # Individual SHAP contribution for each patient feature.
+    feature_contributions: dict[str, float]
+
+
 
 # ============================================================
-# 2. PREDICTION RESPONSE SCHEMA
+# 3. PREDICTION RESPONSE SCHEMA
 # ============================================================
 # This schema defines the response returned immediately
 # after the ML model generates a prediction.
@@ -70,9 +86,12 @@ class PredictionResponse(BaseModel):
     # Probability corresponding to the predicted class.
     predicted_class_probability: float
 
+    # SHAP explanation for this prediction.
+    explanation: PredictionExplanationResponse
+
 
 # ============================================================
-# 3. PREDICTION HISTORY RESPONSE SCHEMA
+# 4. PREDICTION HISTORY RESPONSE SCHEMA
 # ============================================================
 # This schema defines the structure of historical prediction
 # records retrieved from the MySQL predictions table.
@@ -113,7 +132,7 @@ class PredictionHistoryResponse(BaseModel):
     created_at: datetime
 
 # ============================================================
-# 4. PREDICTION DASHBOARD RESPONSE SCHEMA
+# 5. PREDICTION DASHBOARD RESPONSE SCHEMA
 # ============================================================
 # This schema defines the summary statistics returned
 # by the prediction dashboard API.
@@ -139,3 +158,23 @@ class PredictionDashboardResponse(BaseModel):
     # Date and time of the user's latest prediction.
     # None means the user has not generated any predictions.
     latest_prediction: datetime | None = None
+
+# ============================================================
+# 6. GLOBAL SHAP EXPLANATION RESPONSE SCHEMA
+# ============================================================
+# This schema defines the structure of global SHAP feature
+# importance results returned by the explainability API.
+#
+# It contains the number of analysed records and the average
+# absolute SHAP importance of each input feature.
+
+
+class GlobalSHAPResponse(BaseModel):
+
+    # Total number of dataset records analysed by SHAP.
+    total_records_analysed: int = Field(gt=0)
+
+    # Mean absolute SHAP importance for each feature.
+    # Dictionary keys represent feature names.
+    # Dictionary values represent their importance scores.
+    feature_importance: dict[str, float]   

@@ -9,17 +9,29 @@ from sqlalchemy import (
     case     # Provides conditional logic similar to SQL CASE WHEN.
 )
 
+
 # Import Pydantic schemas for validating API inputs
 # and defining structured API responses.
 from backend.app.schemas.prediction import (
-    PredictionInput,              # Validates patient data submitted for prediction.
-    PredictionResponse,           # Defines the immediate ML prediction response.
-    PredictionHistoryResponse,    # Defines individual prediction history records.
-    PredictionDashboardResponse   # Defines summary statistics for the dashboard.
+    PredictionInput,                    # Validates patient data submitted for prediction.
+    PredictionResponse,                 # Defines the immediate ML prediction response.
+    PredictionExplanationResponse,      # Defines individual SHAP explanation responses.
+    PredictionHistoryResponse,          # Defines individual prediction history records.
+    PredictionDashboardResponse,         # Defines summary statistics for the dashboard.
+    GlobalSHAPResponse,                 # Defines global SHAP feature importance responses.
 )
+
 
 # Import the ML prediction function.
 from backend.app.services.prediction_service import predict_diabetes
+
+# Import SHAP explanation functions.
+# explain_prediction() explains one patient's prediction.
+# explain_global_features() calculates overall feature importance.
+from backend.app.services.shap_service import (
+    explain_prediction,
+    explain_global_features
+)
 
 # Import the function that identifies the logged-in user.
 from backend.app.core.dependencies import get_current_user
@@ -28,8 +40,12 @@ from backend.app.core.dependencies import get_current_user
 from backend.app.db.database import get_db
 
 # Import the database models used by these endpoints.
-from backend.app.models import User, Prediction, ModelMetadata
-
+from backend.app.models import (
+    User,                  # Represents registered application users.
+    Prediction,            # Stores individual diabetes predictions.
+    ModelMetadata,         # Stores information about trained ML models.
+    PredictionExplanation # Stores SHAP explanations linked to predictions.
+)
 
 # ============================================================
 # CREATE PREDICTION API ROUTER
@@ -66,8 +82,69 @@ def get_prediction_history(
     # Return the retrieved prediction records.
     return prediction_records
 
+
 # ============================================================
-# 2. GET PREDICTION DASHBOARD STATISTICS
+# 2. GET INDIVIDUAL PREDICTION SHAP EXPLANATION
+# ============================================================
+
+# Register a GET endpoint to retrieve one prediction's SHAP explanation.
+@router.get(
+    "/{prediction_id}/explanation",
+    response_model=PredictionExplanationResponse
+)
+def get_prediction_explanation(
+
+    # Receive the unique ID of the requested prediction.
+    prediction_id: int,
+
+    # Identify the currently authenticated user.
+    current_user: User = Depends(get_current_user),
+
+    # Obtain a database session for retrieving the explanation.
+    db=Depends(get_db)
+):
+
+    # Find the requested prediction only if it belongs to this user.
+    prediction_record = db.scalars(
+        select(Prediction).where(
+            Prediction.id == prediction_id,
+            Prediction.user_id == current_user.id
+        )
+    ).first()
+
+    # Return HTTP 404 if the prediction does not exist
+    # or belongs to another user.
+    if prediction_record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prediction not found."
+        )
+
+    # Retrieve the SHAP explanation linked to this prediction.
+    explanation_record = db.scalars(
+        select(PredictionExplanation).where(
+            PredictionExplanation.prediction_id == prediction_record.id
+        )
+    ).first()
+
+    # Return HTTP 404 if no SHAP explanation exists.
+    if explanation_record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SHAP explanation not found."
+        )
+
+    # Return the stored SHAP explanation.
+    return {
+        "base_value": explanation_record.base_value,
+        "model_output": explanation_record.model_output,
+        "feature_contributions": explanation_record.feature_contributions
+    }
+
+
+
+# ============================================================
+# 3. GET PREDICTION DASHBOARD STATISTICS
 # ============================================================
 
 # Register a GET endpoint at /predictions/dashboard.
@@ -155,43 +232,94 @@ def get_prediction_dashboard(
 
 
 # ============================================================
-# 3. POST GENERATE DIABETES PREDICTION
+# 4.GET GLOBAL SHAP FEATURE IMPORTANCE
+# ============================================================
+
+# Register an authenticated GET endpoint for global SHAP feature importance.
+@router.get(
+    "/explanations/global",
+    response_model=GlobalSHAPResponse
+)
+def get_global_shap_explanation(
+    # Require a logged-in user before providing model explanations.
+    current_user: User = Depends(get_current_user)
+):
+    # Calculate the average absolute SHAP importance for all input features.
+    global_explanation = explain_global_features()
+
+    # Return the global feature importance and analysed record count.
+    return global_explanation
+
+
+# ============================================================
+# 5. POST GENERATE DIABETES PREDICTION WITH SHAP EXPLANATION
 # ============================================================
 
 # Register a POST endpoint at /predictions/predict.
+# This endpoint generates a prediction, explains it using SHAP,
+# and saves both records in a single database transaction.
 @router.post(
     "/predict",
     response_model=PredictionResponse,
     status_code=status.HTTP_200_OK
 )
 def create_prediction(
+    # Receive validated patient information from the API request.
     patient_data: PredictionInput,
+
+    # Identify the currently authenticated user.
     current_user: User = Depends(get_current_user),
+
+    # Obtain a database session for storing prediction records.
     db=Depends(get_db)
 ):
 
     try:
-        # Find all active ML models in the database.
+        # ----------------------------------------------------
+        # STEP 1: VERIFY THE ACTIVE ML MODEL
+        # ----------------------------------------------------
+
+        # Find all ML models currently marked as active.
         active_models = db.scalars(
             select(ModelMetadata).where(
                 ModelMetadata.is_active.is_(True)
             )
         ).all()
 
-        # Ensure exactly one active ML model exists.
+        # Ensure exactly one active model is configured.
+        # Prediction generation must stop if zero or multiple
+        # active models are found.
         if len(active_models) != 1:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Exactly one active ML model must be configured."
             )
 
-        # Select the active model.
+        # Select the single active model.
         active_model = active_models[0]
 
-        # Generate the ML prediction.
+        # ----------------------------------------------------
+        # STEP 2: GENERATE THE ML PREDICTION
+        # ----------------------------------------------------
+
+        # Pass validated patient information to the prediction service.
+        # The service uses the complete saved ML pipeline.
         result = predict_diabetes(patient_data)
 
-        # Create a prediction database record.
+        # ----------------------------------------------------
+        # STEP 3: GENERATE THE SHAP EXPLANATION
+        # ----------------------------------------------------
+
+        # Generate individual feature contributions for this patient.
+        # The SHAP service applies the shared preprocessing helper.
+        shap_result = explain_prediction(patient_data)
+
+        # ----------------------------------------------------
+        # STEP 4: CREATE THE PREDICTION DATABASE RECORD
+        # ----------------------------------------------------
+
+        # Prepare a database record containing patient features
+        # and the prediction generated by the ML model.
         prediction_record = Prediction(
             user_id=current_user.id,
             model_id=active_model.id,
@@ -207,25 +335,63 @@ def create_prediction(
             predicted_probability=result["predicted_class_probability"]
         )
 
-        # Add the prediction record to the database session.
+        # Add the prediction record to the current database session.
+        # It is not permanently saved until db.commit() executes.
         db.add(prediction_record)
 
-        # Save the prediction record in MySQL.
+        # Send the pending INSERT operation to MySQL.
+        # This generates prediction_record.id without committing.
+        # We need this ID to connect the SHAP explanation to its prediction.
+        db.flush()
+
+        # ----------------------------------------------------
+        # STEP 5: CREATE THE SHAP EXPLANATION DATABASE RECORD
+        # ----------------------------------------------------
+
+        # Prepare the explanation record using the generated prediction ID.
+        explanation_record = PredictionExplanation(
+            prediction_id=prediction_record.id,
+            explanation_method="SHAP",
+            base_value=shap_result["base_value"],
+            model_output=shap_result["model_output"],
+            feature_contributions=shap_result["feature_contributions"]
+        )
+
+        # Add the explanation record to the same database session.
+        db.add(explanation_record)
+
+        # ----------------------------------------------------
+        # STEP 6: SAVE BOTH RECORDS IN ONE TRANSACTION
+        # ----------------------------------------------------
+
+        # Commit the prediction and its SHAP explanation together.
+        # If either operation fails, the transaction can be rolled back.
         db.commit()
 
-        # Return the generated prediction result.
-        return result
+        # ----------------------------------------------------
+        # STEP 7: PREPARE THE API RESPONSE
+        # ----------------------------------------------------
+
+        # Combine the original prediction results with the SHAP explanation.
+        # The response structure is validated by PredictionResponse.
+        return {
+            **result,
+            "explanation": shap_result
+        }
 
     except HTTPException:
-        # Roll back the database transaction if an HTTP error occurs.
+        # Undo pending database operations if an HTTP error occurs.
         db.rollback()
+
+        # Preserve and return the original HTTP error.
         raise
 
     except Exception:
-        # Roll back the database transaction if another error occurs.
+        # Undo both prediction and explanation operations if
+        # any unexpected error occurs.
         db.rollback()
 
-        # Return an internal server error.
+        # Return a generic server error without exposing internal details.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while generating or saving the prediction."
