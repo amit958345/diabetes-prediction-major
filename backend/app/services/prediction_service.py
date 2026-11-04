@@ -25,10 +25,12 @@ FEATURE_PATH = PROJECT_ROOT / "models" / "feature_names.pkl"
 model = joblib.load(MODEL_PATH)
 feature_names = joblib.load(FEATURE_PATH)
 
-# Prepare patient data for model prediction and SHAP explanation.
-def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
 
-    # Map API field names to the original ML feature names.
+# Prepare the original, untransformed patient data.
+def prepare_raw_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
+
+    # Map API field names to the original feature names
+    # expected by the trained machine learning model.
     feature_values = {
         "Pregnancies": patient_data.pregnancies,
         "Glucose": patient_data.glucose,
@@ -40,16 +42,28 @@ def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
         "Age": patient_data.age
     }
 
-    # Arrange values in the exact feature order expected by the model.
-    input_data = pd.DataFrame(
+    # Arrange patient values in the exact feature order
+    # used when the original model was trained.
+    raw_input = pd.DataFrame(
         [[feature_values[name] for name in feature_names]],
         columns=feature_names
     )
 
-    # Apply preprocessing without running the Logistic Regression model.
-    transformed_data = model[:-1].transform(input_data)
+    # Return raw values without applying preprocessing.
+    return raw_input
 
-    # Return the transformed data with the original feature names.
+
+# Prepare transformed patient data for SHAP explanations.
+def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
+
+    # First create the original, untransformed patient DataFrame.
+    raw_input = prepare_raw_patient_data(patient_data)
+
+    # Apply the preprocessing steps exactly once.
+    # model[:-1] excludes the final Logistic Regression classifier.
+    transformed_data = model[:-1].transform(raw_input)
+
+    # Preserve the original feature names for SHAP processing.
     return pd.DataFrame(
         transformed_data,
         columns=feature_names
@@ -59,22 +73,23 @@ def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
 # Generate a diabetes prediction from validated patient data.
 def predict_diabetes(patient_data: PredictionInput) -> dict:
 
-    # Prepare the patient data using the shared preprocessing helper.
-    input_data = prepare_patient_data(patient_data)
+    # Prepare the original patient input without preprocessing it manually.
+    raw_input = prepare_raw_patient_data(patient_data)
 
-    # Generate the predicted class using the complete ML pipeline.
-    predicted_class = int(model.predict(input_data)[0])
+    # Let the complete trained pipeline preprocess the raw input
+    # and generate the predicted class exactly once.
+    predicted_class = int(model.predict(raw_input)[0])
 
-    # Generate probabilities for each class.
-    probabilities = model.predict_proba(input_data)[0]
+    # Let the same complete pipeline calculate class probabilities.
+    probabilities = model.predict_proba(raw_input)[0]
 
-    # Associate each probability with its corresponding class.
+    # Associate each probability with its corresponding class label.
     class_probabilities = {
         int(class_label): float(probability)
         for class_label, probability in zip(model.classes_, probabilities)
     }
 
-    # Return the prediction results.
+    # Return the prediction results and the probability of the predicted class.
     return {
         "predicted_class": predicted_class,
         "probability_class_0": class_probabilities[0],
