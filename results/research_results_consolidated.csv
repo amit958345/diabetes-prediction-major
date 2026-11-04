@@ -1,0 +1,43 @@
+Experiment,Configuration,Accuracy,Accuracy_Std,Precision,Precision_Std,Recall,Recall_Std,F1_Score,F1_Std,ROC_AUC,ROC_AUC_Std,Threshold,True_Negative,False_Positive,False_Negative,True_Positive
+Original Model Comparison,Logistic Regression,0.7721,0.0189,0.7129,,0.5934,,0.645,,0.8395,,,,,,
+Original Model Comparison,Decision Tree,0.7225,0.0427,0.6177,,0.5818,,0.5865,,0.7726,,,,,,
+Original Model Comparison,Random Forest,0.7616,0.0285,0.6811,,0.5966,,0.6354,,0.8244,,,,,,
+Original Model Comparison,KNN,0.7487,0.0258,0.657,,0.5894,,0.6207,,0.7801,,,,,,
+Original Model Comparison,SVM,0.7578,0.0141,0.6877,,0.5672,,0.6199,,0.8221,,,,,,
+Preprocessing Comparison,A - Impute -> IQR -> Scale,0.7721,0.0212,0.7129,0.0653,0.5934,0.0438,0.645,0.0246,0.8395,0.019,,,,,
+Preprocessing Comparison,B - IQR -> Impute -> Scale,0.7812,0.017,0.7403,0.064,0.586,0.0451,0.6513,0.0198,0.838,0.0233,,,,,
+Preprocessing Comparison,C - Impute -> Scale,0.7721,0.0185,0.7261,0.069,0.5711,0.0529,0.6358,0.0235,0.8366,0.0227,,,,,
+IQR-First Model Comparison,Logistic Regression,0.7812,0.017,0.7403,0.064,0.586,0.0451,0.6513,0.0198,0.838,0.0233,,,,,
+IQR-First Model Comparison,Decision Tree,0.7147,0.0478,0.6106,0.0717,0.5706,0.1486,0.5763,0.0825,0.7635,0.0457,,,,,
+IQR-First Model Comparison,Random Forest,0.7604,0.0248,0.6854,0.0564,0.5858,0.02,0.6309,0.03,0.8197,0.0227,,,,,
+IQR-First Model Comparison,KNN,0.7239,0.0258,0.6213,0.0537,0.5446,0.0505,0.5789,0.039,0.7722,0.0227,,,,,
+IQR-First Model Comparison,SVM,0.763,0.0201,0.7063,0.0456,0.5522,0.0424,0.6189,0.0348,0.8237,0.0099,,,,,
+Logistic Regression Tuning,"C=0.01, Penalty=l2, Class Weight=balanced",0.7395,0.0418,0.6053,0.0569,0.7572,0.0603,0.6704,0.0446,0.8336,0.0221,,,,,
+Logistic Regression Tuning,"C=0.1, Penalty=l1, Class Weight=balanced",0.7486,0.0436,0.6233,0.0689,0.7424,0.0443,0.6749,0.0429,0.8403,0.02,,,,,
+Logistic Regression Tuning,"C=0.1, Penalty=l2, Class Weight=balanced",0.746,0.0452,0.6226,0.0702,0.7275,0.0359,0.6684,0.0432,0.8373,0.0213,,,,,
+Logistic Regression Tuning,"C=1.0, Penalty=l1, Class Weight=balanced",0.7473,0.0484,0.6255,0.0734,0.7237,0.0338,0.6687,0.0473,0.8377,0.0203,,,,,
+Logistic Regression Tuning,"C=10.0, Penalty=l2, Class Weight=balanced",0.7473,0.0443,0.625,0.0694,0.7237,0.0317,0.6684,0.0427,0.837,0.0202,,,,,
+Logistic Regression Tuning,"C=100.0, Penalty=l1, Class Weight=balanced",0.7473,0.0443,0.625,0.0694,0.7237,0.0317,0.6684,0.0427,0.8369,0.0202,,,,,
+Logistic Regression Tuning,"C=100.0, Penalty=l2, Class Weight=balanced",0.7473,0.0443,0.625,0.0694,0.7237,0.0317,0.6684,0.0427,0.8369,0.0203,,,,,
+Logistic Regression Tuning,"C=0.01, Penalty=l1, Class Weight=None",0.7056,0.032,0.5651,0.0402,0.7203,0.0324,0.6315,0.0203,0.7905,0.0247,,,,,
+Logistic Regression Tuning,"C=0.01, Penalty=l1, Class Weight=balanced",0.7056,0.032,0.5651,0.0402,0.7203,0.0324,0.6315,0.0203,0.7905,0.0247,,,,,
+Logistic Regression Tuning,"C=10.0, Penalty=l1, Class Weight=balanced",0.746,0.0452,0.6237,0.0703,0.72,0.0306,0.6662,0.0439,0.8371,0.0202,,,,,
+Logistic Regression Tuning,"C=1.0, Penalty=l2, Class Weight=balanced",0.746,0.0452,0.6237,0.0703,0.72,0.0306,0.6662,0.0439,0.837,0.0204,,,,,
+Logistic Regression Tuning,"C=0.01, Penalty=l2, Class Weight=None",0.7616,0.0351,0.6869,0.0783,0.6006,0.0534,0.6379,0.0476,0.8344,0.0221,,,,,
+Logistic Regression Tuning,"C=0.1, Penalty=l2, Class Weight=None",0.7799,0.0214,0.7348,0.0685,0.5934,0.0409,0.6531,0.0229,0.8385,0.0213,,,,,
+Logistic Regression Tuning,"C=1.0, Penalty=l1, Class Weight=None",0.7812,0.0152,0.7383,0.0585,0.5897,0.0373,0.6529,0.0146,0.8389,0.0205,,,,,
+Logistic Regression Tuning,"C=10.0, Penalty=l2, Class Weight=None",0.7825,0.014,0.7417,0.0565,0.5897,0.0373,0.6542,0.0122,0.8376,0.0208,,,,,
+Logistic Regression Tuning,"C=10.0, Penalty=l1, Class Weight=None",0.7825,0.014,0.7417,0.0565,0.5897,0.0373,0.6542,0.0122,0.8376,0.0208,,,,,
+Logistic Regression Tuning,"C=100.0, Penalty=l1, Class Weight=None",0.7825,0.014,0.7417,0.0565,0.5897,0.0373,0.6542,0.0122,0.8376,0.0209,,,,,
+Logistic Regression Tuning,"C=100.0, Penalty=l2, Class Weight=None",0.7825,0.014,0.7417,0.0565,0.5897,0.0373,0.6542,0.0122,0.8375,0.021,,,,,
+Logistic Regression Tuning,"C=1.0, Penalty=l2, Class Weight=None",0.7812,0.0152,0.7403,0.0573,0.586,0.0404,0.6513,0.0177,0.838,0.0208,,,,,
+Logistic Regression Tuning,"C=0.1, Penalty=l1, Class Weight=None",0.7708,0.021,0.7206,0.0669,0.5747,0.0231,0.6369,0.0176,0.8397,0.0197,,,,,
+Decision Threshold Analysis,Threshold=0.3,0.5690104166666666,,0.4468802698145025,,0.9888059701492538,,0.6155632984901278,,0.8325149253731343,,0.3,172.0,328.0,3.0,265.0
+Decision Threshold Analysis,Threshold=0.35,0.6263020833333334,,0.4821763602251407,,0.9589552238805971,,0.6416978776529338,,0.8325149253731343,,0.35,224.0,276.0,11.0,257.0
+Decision Threshold Analysis,Threshold=0.4,0.6809895833333334,,0.5248380129589633,,0.9067164179104478,,0.66484268125855,,0.8325149253731343,,0.4,280.0,220.0,25.0,243.0
+Decision Threshold Analysis,Threshold=0.45,0.71875,,0.565,,0.8432835820895522,,0.6766467065868264,,0.8325149253731343,,0.45,326.0,174.0,42.0,226.0
+Decision Threshold Analysis,Threshold=0.5,0.7395833333333334,,0.6005917159763313,,0.7574626865671642,,0.66996699669967,,0.8325149253731343,,0.5,365.0,135.0,65.0,203.0
+Decision Threshold Analysis,Threshold=0.55,0.75,,0.6357142857142857,,0.664179104477612,,0.6496350364963503,,0.8325149253731343,,0.55,398.0,102.0,90.0,178.0
+Decision Threshold Analysis,Threshold=0.6,0.7643229166666666,,0.6883116883116883,,0.5932835820895522,,0.6372745490981964,,0.8325149253731343,,0.6,428.0,72.0,109.0,159.0
+Decision Threshold Analysis,Threshold=0.65,0.7591145833333334,,0.7219251336898396,,0.503731343283582,,0.5934065934065934,,0.8325149253731343,,0.65,448.0,52.0,133.0,135.0
+Decision Threshold Analysis,Threshold=0.7,0.75,,0.7753623188405797,,0.39925373134328357,,0.5270935960591133,,0.8325149253731343,,0.7,469.0,31.0,161.0,107.0
