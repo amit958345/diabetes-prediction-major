@@ -1,19 +1,43 @@
+# Python virtual environments
 .venv/
 .venv-1/
 .venv-2/
 
+# Python cache files
 __pycache__/
 *.pyc
 
+# Jupyter and testing
 .ipynb_checkpoints/
-
-.vscode/
-
 .pytest_cache/
 
+# Editor settings
+.vscode/
+
+# Streamlit secrets
 .streamlit/secrets.toml
 
 # Environment variables and secrets
 .env
 .env.*
 !.env.example
+
+# Frontend dependencies and build output
+node_modules/
+frontend/dist/
+
+# Logs
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Backup and unused frontend template files
+frontend/README.md
+frontend/src/App-backup.jsx
+frontend/src/assets/react.svg
+frontend/src/assets/vite.svg
+
+# Backend practice scripts (excluded from main application repository)
+backend/practice/

@@ -177,4 +177,40 @@ class GlobalSHAPResponse(BaseModel):
     # Mean absolute SHAP importance for each feature.
     # Dictionary keys represent feature names.
     # Dictionary values represent their importance scores.
-    feature_importance: dict[str, float]   
+    feature_importance: dict[str, float]
+
+
+# ============================================================
+# 7. ADMIN PREDICTION MONITORING RESPONSE SCHEMA
+# ============================================================
+# This schema defines the prediction information returned
+# to administrators through the system-wide monitoring API.
+#
+# IMPORTANT:
+# Patient medical input features are intentionally excluded.
+# This prevents unnecessary exposure of sensitive patient data
+# when administrators monitor prediction activity.
+
+
+class AdminPredictionResponse(BaseModel):
+
+    # Enables validation directly from SQLAlchemy model objects.
+    model_config = ConfigDict(from_attributes=True)
+
+    # Unique ID of the prediction record.
+    id: int
+
+    # ID of the user who generated this prediction.
+    user_id: int
+
+    # ID of the ML model associated with this prediction.
+    model_id: int
+
+    # Predicted class: 0 (non-diabetic) or 1 (diabetic).
+    predicted_class: int = Field(ge=0, le=1)
+
+    # Probability corresponding to the predicted class.
+    predicted_probability: float = Field(ge=0, le=1)
+
+    # Date and time when the prediction was generated.
+    created_at: datetime

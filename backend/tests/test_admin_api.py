@@ -827,12 +827,19 @@ def test_admin_can_filter_predictions(admin_prediction_test_data):
     # All returned records must belong to class 1.
     class_predictions = class_response.json()
 
-    assert len(class_predictions) == 2
+    # Only check predictions created by this test.
+    test_class_predictions = [
+        item
+        for item in class_predictions
+        if item["id"] in prediction_ids
+    ]
+
+    # Exactly two of the three temporary records should be Class 1.
+    assert len(test_class_predictions) == 2
 
     assert all(
         item["predicted_class"] == 1
-        for item in class_predictions
-        if item["id"] in prediction_ids
+        for item in test_class_predictions
     )
 
     # Retrieve predictions belonging to the temporary user.

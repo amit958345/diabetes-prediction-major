@@ -1,3 +1,4 @@
+
 from pathlib import Path
 import sys
 
@@ -6,6 +7,10 @@ import pandas as pd
 
 from backend.app.schemas.prediction import PredictionInput
 
+
+# ==========================================
+# 1. PROJECT CONFIGURATION
+# ==========================================
 
 # Find the main project directory
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -21,12 +26,23 @@ MODEL_PATH = PROJECT_ROOT / "models" / "diabetes_model.pkl"
 FEATURE_PATH = PROJECT_ROOT / "models" / "feature_names.pkl"
 
 
+# Classification threshold selected through research evaluation
+CLASSIFICATION_THRESHOLD = 0.35
+
+
+# ==========================================
+# 2. LOAD TRAINED MODEL
+# ==========================================
+
 # Load the trained ML pipeline and expected feature names
 model = joblib.load(MODEL_PATH)
 feature_names = joblib.load(FEATURE_PATH)
 
 
-# Prepare the original, untransformed patient data.
+# ==========================================
+# 3. PREPARE RAW PATIENT DATA
+# ==========================================
+
 def prepare_raw_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
 
     # Map API field names to the original feature names
@@ -53,7 +69,10 @@ def prepare_raw_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
     return raw_input
 
 
-# Prepare transformed patient data for SHAP explanations.
+# ==========================================
+# 4. PREPARE TRANSFORMED DATA FOR SHAP
+# ==========================================
+
 def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
 
     # First create the original, untransformed patient DataFrame.
@@ -70,17 +89,16 @@ def prepare_patient_data(patient_data: PredictionInput) -> pd.DataFrame:
     )
 
 
-# Generate a diabetes prediction from validated patient data.
+# ==========================================
+# 5. GENERATE DIABETES PREDICTION
+# ==========================================
+
 def predict_diabetes(patient_data: PredictionInput) -> dict:
 
     # Prepare the original patient input without preprocessing it manually.
     raw_input = prepare_raw_patient_data(patient_data)
 
-    # Let the complete trained pipeline preprocess the raw input
-    # and generate the predicted class exactly once.
-    predicted_class = int(model.predict(raw_input)[0])
-
-    # Let the same complete pipeline calculate class probabilities.
+    # Calculate class probabilities using the complete trained pipeline.
     probabilities = model.predict_proba(raw_input)[0]
 
     # Associate each probability with its corresponding class label.
@@ -88,6 +106,13 @@ def predict_diabetes(patient_data: PredictionInput) -> dict:
         int(class_label): float(probability)
         for class_label, probability in zip(model.classes_, probabilities)
     }
+
+    # Apply the selected classification threshold to Class 1 probability.
+    predicted_class = (
+        1
+        if class_probabilities[1] >= CLASSIFICATION_THRESHOLD
+        else 0
+    )
 
     # Return the prediction results and the probability of the predicted class.
     return {

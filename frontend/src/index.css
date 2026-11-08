@@ -1,0 +1,232 @@
+
+/*
+============================================================
+DIAPREDICT — GLOBAL DESIGN SYSTEM
+Theme: Next-Generation Hybrid AI
+
+Purpose:
+Defines the global visual language for the application:
+- Dark AI workspace
+- Midnight navy backgrounds
+- Electric cyan and teal accents
+- Glass-style dark surfaces
+- Consistent typography and spacing
+
+These variables are reused by App.css and page components.
+============================================================
+*/
+
+
+/* ----------------------------------------------------------
+   1. GLOBAL DESIGN TOKENS
+   Centralized colors, borders, shadows and typography.
+   Change these values to adjust the entire application.
+   ---------------------------------------------------------- */
+
+:root {
+  /* Main workspace and sidebar colors */
+  --background: #070D19;
+  --background-secondary: #0B1424;
+  --primary: #101E35;
+
+  /* Card and panel surfaces */
+  --surface: #111D31;
+  --surface-elevated: #172740;
+  --surface-hover: #1B304B;
+
+  /* Brand and interaction colors */
+  --accent: #00D4E8;
+  --accent-hover: #00B8CC;
+  --accent-secondary: #13B8A6;
+
+  /* Text colors */
+  --text-primary: #F1F7FF;
+  --text-secondary: #B1C2D8;
+  --text-muted: #7F94AE;
+
+  /* Borders and separators */
+  --border: rgba(119, 166, 211, 0.18);
+  --border-strong: rgba(0, 212, 232, 0.35);
+
+  /* Status colors */
+  --success: #35D69A;
+  --warning: #F5B942;
+  --danger: #FF5D78;
+  --info: #5C9DFF;
+
+  /* Consistent corner rounding */
+  --radius-sm: 8px;
+  --radius-md: 13px;
+  --radius-lg: 19px;
+
+  /* Subtle shadows for depth */
+  --shadow-sm: 0 5px 18px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.30);
+
+  /* Standard application font */
+  --font-family: Inter, "Segoe UI", Arial, sans-serif;
+
+  /* Default text and browser color scheme */
+  color-scheme: dark;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: var(--background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ----------------------------------------------------------
+   2. UNIVERSAL BOX SIZING
+   Makes width and height calculations predictable.
+   Padding and borders are included in element dimensions.
+   ---------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
+}
+
+
+/* ----------------------------------------------------------
+   3. HTML AND BODY
+   Removes browser default spacing and establishes the
+   full-screen dark application workspace.
+   ---------------------------------------------------------- */
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--background);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(0, 160, 210, 0.07),
+      transparent 32%
+    ),
+    var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+/* ----------------------------------------------------------
+   4. REACT ROOT CONTAINER
+   Allows React to occupy the complete browser viewport.
+   Removes the original Vite starter-page width restriction.
+   ---------------------------------------------------------- */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  text-align: left;
+}
+
+
+/* ----------------------------------------------------------
+   5. DEFAULT TYPOGRAPHY
+   Provides consistent heading and paragraph appearance.
+   ---------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  line-height: 1.3;
+}
+
+p {
+  margin-top: 0;
+  color: var(--text-secondary);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+
+/* ----------------------------------------------------------
+   6. LINKS AND BUTTON INTERACTIONS
+   Keeps interactive elements consistent with the AI theme.
+   ---------------------------------------------------------- */
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+
+/* ----------------------------------------------------------
+   7. TEXT SELECTION
+   Uses a subtle cyan highlight matching the brand accent.
+   ---------------------------------------------------------- */
+
+::selection {
+  color: #FFFFFF;
+  background: rgba(0, 212, 232, 0.35);
+}
+
+
+/* ----------------------------------------------------------
+   8. SCROLLBAR
+   Styles the browser scrollbar to match the dark workspace.
+   ---------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #29415D;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3B607F;
+}
+
+
+/* ----------------------------------------------------------
+   9. ACCESSIBILITY
+   Reduces animations when a user requests reduced motion.
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
