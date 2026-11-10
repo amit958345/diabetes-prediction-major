@@ -150,7 +150,7 @@ const dashboardStatistics = [
   },
   {
     title: 'Test Accuracy',
-    value: '70.13%',
+    value: '72.08%',
     description: 'Independent test evaluation',
     icon: '◎',
     theme: 'blue',
@@ -1384,22 +1384,22 @@ function App() {
 
                   <div className="performance-metric">
                     <span>Precision</span>
-                    <strong>55.00%</strong>
+                    <strong>58.46%</strong>
                   </div>
 
                   <div className="performance-metric">
                     <span>Recall</span>
-                    <strong>81.48%</strong>
+                    <strong>70.37%</strong>
                   </div>
 
                   <div className="performance-metric">
                     <span>F1 Score</span>
-                    <strong>65.67%</strong>
+                    <strong>63.87%</strong>
                   </div>
 
                   <div className="performance-metric">
                     <span>ROC-AUC</span>
-                    <strong>79.74%</strong>
+                    <strong>80.85%</strong>
                   </div>
 
                 </div>
@@ -2920,7 +2920,7 @@ function App() {
                   </span>
 
                   <strong>
-                    70.13%
+                    72.08%
                   </strong>
 
                   <small>
@@ -2938,7 +2938,7 @@ function App() {
                   </span>
 
                   <strong>
-                    55.00%
+                    58.46%
                   </strong>
 
                   <small>
@@ -2956,7 +2956,7 @@ function App() {
                   </span>
 
                   <strong>
-                    81.48%
+                    70.37%
                   </strong>
 
                   <small>
@@ -2974,7 +2974,7 @@ function App() {
                   </span>
 
                   <strong>
-                    64.00%
+                    73.00%
                   </strong>
 
                   <small>
@@ -2992,7 +2992,7 @@ function App() {
                   </span>
 
                   <strong>
-                    65.67%
+                    63.87%
                   </strong>
 
                   <small>
@@ -3010,7 +3010,7 @@ function App() {
                   </span>
 
                   <strong>
-                    79.74%
+                    80.85%
                   </strong>
 
                   <small>
@@ -3092,7 +3092,7 @@ function App() {
                       <td className="matrix-true-negative">
 
                         <strong>
-                          64
+                          73
                         </strong>
 
                         <span>
@@ -3104,7 +3104,7 @@ function App() {
                       <td className="matrix-false-positive">
 
                         <strong>
-                          36
+                          27
                         </strong>
 
                         <span>
@@ -3126,7 +3126,7 @@ function App() {
                       <td className="matrix-false-negative">
 
                         <strong>
-                          10
+                          16
                         </strong>
 
                         <span>
@@ -3138,7 +3138,7 @@ function App() {
                       <td className="matrix-true-positive">
 
                         <strong>
-                          44
+                          38
                         </strong>
 
                         <span>
@@ -3160,22 +3160,22 @@ function App() {
               <div className="research-matrix-summary">
 
                 <p>
-                  <strong>True Positive (44):</strong>
+                  <strong>True Positive (38):</strong>
                   Actual positive cases correctly predicted as positive.
                 </p>
 
                 <p>
-                  <strong>True Negative (64):</strong>
+                  <strong>True Negative (73):</strong>
                   Actual negative cases correctly predicted as negative.
                 </p>
 
                 <p>
-                  <strong>False Positive (36):</strong>
+                  <strong>False Positive (27):</strong>
                   Actual negative cases incorrectly predicted as positive.
                 </p>
 
                 <p>
-                  <strong>False Negative (10):</strong>
+                  <strong>False Negative (16):</strong>
                   Actual positive cases incorrectly predicted as negative.
                 </p>
 
@@ -3405,9 +3405,10 @@ function App() {
                       Recall Performance
                     </h4>
 
+
                     <p>
-                      The model achieved 81.48% recall, identifying
-                      44 of the 54 actual positive cases in the
+                      The model achieved 70.37% recall, identifying
+                      38 of the 54 actual positive cases in the
                       independent test set.
                     </p>
 
@@ -3429,7 +3430,7 @@ function App() {
                     </h4>
 
                     <p>
-                      The model produced 36 false positive predictions.
+                      The model produced 27 false positive predictions.
                       This indicates that some negative cases were
                       incorrectly classified as positive.
                     </p>
@@ -3452,7 +3453,7 @@ function App() {
                     </h4>
 
                     <p>
-                      The ROC-AUC score of 79.74% indicates the model's
+                      The ROC-AUC score of 80.85% indicates the model's
                       ability to distinguish between the two classes
                       across different classification thresholds.
                     </p>

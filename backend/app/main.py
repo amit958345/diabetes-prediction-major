@@ -20,6 +20,7 @@ http://127.0.0.1:8000
 ============================================================
 """
 
+import os
 # Import FastAPI to create the backend application.
 from fastapi import FastAPI
 
@@ -52,39 +53,52 @@ app = FastAPI(
     version="1.0.0"
 )
 
-
 # ==========================================================
 # CONFIGURE CORS MIDDLEWARE
 # ==========================================================
 
 # CORS stands for Cross-Origin Resource Sharing.
 #
-# The frontend and backend use different origins:
-# Frontend: http://localhost:5173
-# Backend:  http://127.0.0.1:8000
+# It allows the React frontend to communicate with the
+# FastAPI backend when they run on different origins.
 #
-# Browsers restrict cross-origin requests unless the backend
-# explicitly allows the frontend origin.
+# Local development:
+# http://localhost:5173
+# http://127.0.0.1:5173
 #
-# CORSMiddleware handles browser preflight OPTIONS requests
-# and adds the appropriate CORS response headers.
+# Production:
+# The deployed frontend URL will be configured later
+# through the FRONTEND_ORIGINS environment variable.
 
+
+# Read allowed frontend origins from environment variables.
+# Multiple frontend URLs can be separated using commas.
+frontend_origins = os.getenv(
+    "FRONTEND_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173"
+)
+
+
+# Convert the comma-separated URLs into a Python list.
+# Remove unnecessary spaces and trailing slashes.
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in frontend_origins.split(",")
+    if origin.strip()
+]
+
+
+# Add CORS middleware to the FastAPI application.
 app.add_middleware(
     CORSMiddleware,
 
-    # Allow requests from the React development server.
-    # Both addresses are included because localhost and
-    # 127.0.0.1 are treated as different browser origins.
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    # Allow requests from configured frontend origins.
+    allow_origins=allowed_origins,
 
-    # Allow cookies and authorization credentials when needed.
+    # Allow authorization credentials when required.
     allow_credentials=True,
 
     # Allow HTTP methods such as GET, POST, PUT and DELETE.
-    # This also permits OPTIONS preflight requests.
     allow_methods=["*"],
 
     # Allow headers such as Content-Type and Authorization.

@@ -330,7 +330,9 @@ def generate_research_report_pdf() -> bytes:
         ["Specificity", "73.00%", "Negative cases identified"],
         ["F1 Score", "63.87%", "Harmonic mean of precision and recall"],
         ["ROC-AUC", "80.85%", "Area under the ROC curve"],
+        ["Classification Threshold", "0.35", "Selected operating threshold"],
     ]
+
 
     confusion = [
         ["Actual / Predicted", "Predicted Negative", "Predicted Positive"],

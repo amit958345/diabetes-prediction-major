@@ -531,3 +531,66 @@ def register_model(
     # Return the newly registered model metadata.
     # FastAPI validates it using ModelDetailResponse.
     return new_model
+
+
+# ---------------------------------------------------------
+# MODEL MANAGEMENT - ACTIVATE A REGISTERED MODEL
+# ---------------------------------------------------------
+
+@router.post(
+    "/models/{model_id}/activate",
+    response_model=ModelDetailResponse
+)
+def activate_model(
+    model_id: int,
+    current_admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Activate one registered model metadata record.
+
+    All other registered models are deactivated.
+    This endpoint changes database metadata only.
+    It does not load or replace model files.
+    """
+
+    # Find the requested model.
+    model_record = (
+        db.query(ModelMetadata)
+        .filter(ModelMetadata.id == model_id)
+        .first()
+    )
+
+    # Do not change anything if the model does not exist.
+    if model_record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Model not found"
+        )
+
+    try:
+        # Deactivate all currently active models.
+        db.query(ModelMetadata).filter(
+            ModelMetadata.is_active.is_(True)
+        ).update(
+            {ModelMetadata.is_active: False},
+            synchronize_session=False
+        )
+
+        # Activate the selected model.
+        model_record.is_active = True
+
+        # Save both changes in one transaction.
+        db.commit()
+        db.refresh(model_record)
+
+    except Exception:
+        # Undo changes if anything goes wrong.
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to activate model"
+        )
+
+    return model_record

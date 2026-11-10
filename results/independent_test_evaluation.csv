@@ -1,2 +1,2 @@
 selected_threshold,test_records,accuracy,precision,recall,specificity,f1_score,roc_auc,true_negative,false_positive,false_negative,true_positive
-0.45,154,0.7012987012987013,0.55,0.8148148148148148,0.64,0.6567164179104478,0.7974074074074075,64,36,10,44
+0.35,154,0.7208,0.5846,0.7037,0.7300,0.6387,0.8085,73,27,16,38
