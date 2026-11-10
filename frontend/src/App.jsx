@@ -128,6 +128,13 @@ const navigationItems = [
     label: 'About Project',
     group: 'SYSTEM',
   },
+  {
+    id: 'admin',
+    icon: '♙',
+    label: 'User Management',
+    group: 'ADMINISTRATION',
+    adminOnly: true,
+  },
 ]
 
 
@@ -344,6 +351,13 @@ function App() {
 
   // Stores API errors.
   const [historyError, setHistoryError] = useState('')
+
+  // Administrator-only user management data.
+  const [adminUsers, setAdminUsers] = useState([])
+  const [adminDashboard, setAdminDashboard] = useState(null)
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [adminError, setAdminError] = useState('')
+  const [adminUserSearch, setAdminUserSearch] = useState('')
 
   // Stores the search text entered by the user.
   const [historySearch, setHistorySearch] = useState('')
@@ -630,6 +644,74 @@ function App() {
     return () => controller.abort()
   }, [activePage, authToken])
 
+  // ========================================================
+  // 6.4.3 FETCH ADMIN DASHBOARD AND USER LIST
+  // ========================================================
+  // These endpoints are protected by the backend require_admin dependency.
+  // The API returns only safe user fields: id, name, email and role.
+  useEffect(() => {
+    if (activePage !== 'admin') return
+
+    if (currentUser?.role !== 'admin') {
+      setAdminUsers([])
+      setAdminDashboard(null)
+      setAdminError('Administrator access is required to view User Management.')
+      setActivePage('dashboard')
+      return
+    }
+
+    if (!authToken) {
+      setAdminError('Authentication required. Please log in again.')
+      return
+    }
+
+    const controller = new AbortController()
+
+    const fetchAdminData = async () => {
+      setAdminLoading(true)
+      setAdminError('')
+
+      try {
+        const [dashboardResponse, usersResponse] = await Promise.all([
+          authenticatedFetch(`${API_BASE_URL}/admin/dashboard`, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            signal: controller.signal,
+          }),
+          authenticatedFetch(`${API_BASE_URL}/admin/users?skip=0&limit=100`, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            signal: controller.signal,
+          }),
+        ])
+
+        const dashboardData = await dashboardResponse.json()
+        const usersData = await usersResponse.json()
+
+        if (!dashboardResponse.ok) {
+          throw new Error(dashboardData?.detail || `Admin dashboard error: ${dashboardResponse.status}`)
+        }
+
+        if (!usersResponse.ok) {
+          throw new Error(usersData?.detail || `User list error: ${usersResponse.status}`)
+        }
+
+        setAdminDashboard(dashboardData)
+        setAdminUsers(Array.isArray(usersData) ? usersData : [])
+      } catch (error) {
+        if (error.name === 'AbortError') return
+        setAdminError(error.message || 'Unable to load administrator data.')
+      } finally {
+        if (!controller.signal.aborted) {
+          setAdminLoading(false)
+        }
+      }
+    }
+
+    fetchAdminData()
+    return () => controller.abort()
+  }, [activePage, authToken, currentUser?.role])
+
 
   // 6.5 FILTER PREDICTION HISTORY
   // ========================================================
@@ -687,6 +769,15 @@ function App() {
   const selectedClass0Probability = selectedHistoryRecord
     ? 1 - selectedClass1Probability
     : null
+
+  const filteredAdminUsers = adminUsers.filter((user) => {
+    const query = adminUserSearch.trim().toLowerCase()
+    if (!query) return true
+    return [user.id, user.name, user.email, user.role]
+      .join(' ')
+      .toLowerCase()
+      .includes(query)
+  })
 
 
   // ========================================================
@@ -1086,7 +1177,7 @@ function App() {
 
 
         {/* Sidebar navigation groups */}
-        {['WORKSPACE', 'INTELLIGENCE', 'SYSTEM'].map((group) => (
+        {['WORKSPACE', 'INTELLIGENCE', 'SYSTEM', 'ADMINISTRATION'].map((group) => (
 
           <div
             className="navigation-group"
@@ -1103,6 +1194,7 @@ function App() {
               {navigationItems
 
                 .filter((item) => item.group === group)
+                .filter((item) => !item.adminOnly || currentUser?.role === 'admin')
 
                 .map((item) => (
 
@@ -1363,7 +1455,7 @@ function App() {
                     </p>
 
                     <h2>
-                      70.13<span>%</span>
+                      72.08<span>%</span>
                     </h2>
 
                     <small>
@@ -1697,6 +1789,129 @@ function App() {
 
           </section>
 
+
+        ) : activePage === 'admin' && currentUser?.role === 'admin' ? (
+
+          /* ==================================================
+             ADMINISTRATION · USER MANAGEMENT
+             Reads the protected /admin/users endpoint.
+             ================================================== */
+
+          <section className="dashboard-content history-page">
+            <div className="history-page-heading">
+              <div>
+                <p className="section-eyebrow">ADMINISTRATION</p>
+                <h2>User Management</h2>
+                <p>Review registered DiaPredict accounts and their assigned roles.</p>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setAdminError('')
+                  setActivePage('dashboard')
+                  setTimeout(() => setActivePage('admin'), 0)
+                }}
+              >
+                Refresh Users ↻
+              </button>
+            </div>
+
+            {adminDashboard?.statistics && (
+              <div className="history-summary-grid" style={{ marginBottom: '22px' }}>
+                {[
+                  ['Registered Users', adminDashboard.statistics.total_users ?? 0],
+                  ['Total Predictions', adminDashboard.statistics.total_predictions ?? 0],
+                  ['Class 0 Predictions', adminDashboard.statistics.class_0_predictions ?? 0],
+                  ['Class 1 Predictions', adminDashboard.statistics.class_1_predictions ?? 0],
+                ].map(([label, value]) => (
+                  <article className="history-summary-card" key={label}>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                    <small>System-wide aggregate</small>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            <section className="dashboard-panel premium-panel history-table-panel">
+              <div className="history-table-heading">
+                <div>
+                  <h3>Registered Accounts</h3>
+                  <p>Only account ID, name, email and role are displayed. Password hashes are never returned.</p>
+                </div>
+                <span className="history-live-tag">
+                  {adminLoading ? 'LOADING USERS' : adminError ? 'API ERROR' : 'ADMIN VIEW'}
+                </span>
+              </div>
+
+              {adminError && (
+                <div className="history-empty-state" role="alert">
+                  <h3>Unable to load User Management</h3>
+                  <p>{adminError}</p>
+                </div>
+              )}
+
+              {adminLoading && (
+                <div className="history-empty-state">
+                  <h3>Loading registered users...</h3>
+                  <p>Retrieving safe account information from the database.</p>
+                </div>
+              )}
+
+              {!adminLoading && !adminError && (
+                <>
+                  <div className="history-controls">
+                    <input
+                      type="search"
+                      className="history-search"
+                      placeholder="Search by user ID, name, email or role..."
+                      aria-label="Search registered users"
+                      value={adminUserSearch}
+                      onChange={(event) => setAdminUserSearch(event.target.value)}
+                    />
+                    <span className="history-live-tag">
+                      {filteredAdminUsers.length} USERS
+                    </span>
+                  </div>
+
+                  {filteredAdminUsers.length === 0 ? (
+                    <div className="history-empty-state">
+                      <h3>No matching users</h3>
+                      <p>Try another name, email address, user ID or role.</p>
+                    </div>
+                  ) : (
+                    <div className="history-table-wrapper">
+                      <table className="history-table">
+                        <thead>
+                          <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAdminUsers.map((user) => (
+                            <tr key={user.id}>
+                              <td>#{user.id}</td>
+                              <td>{user.name}</td>
+                              <td>{user.email}</td>
+                              <td>
+                                <span className={user.role === 'admin' ? 'history-result-positive' : 'history-result-negative'}>
+                                  {user.role}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          </section>
 
         ) : activePage === 'analytics' ? (
 
